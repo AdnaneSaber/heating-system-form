@@ -71,28 +71,25 @@ const App = () => {
         }
 
     ]
-    const [state, setState] = React.useState({
-        logementType: "",
-        city: "",
-        zipCode: "",
-        logementAcheve: "",
-        surface: "",
-    })
+    const [state, setState] = React.useState({})
+    React.useEffect(() => {
+        console.log(state)
+    }, [state])
     return (
-        <div className="p-4">
+        <div className="p-4 container mx-auto">
             <Section title="VOTRE LOGEMENT" id="1" cardCount="2">
                 <Card title="Quel est le type de votre logement ?">
-                    <Logement />
+                    <Logement setState={setState} />
                 </Card>
                 <Card title="Où se situe votre logement ?">
-                    <ComboBox />
+                    <ComboBox setState={setState} />
                 </Card>
                 <Card title="À quelle période votre logement a-t-il été achevé ?">
-                    <RadioRect els={logementCard3} />
+                    <RadioRect els={logementCard3} setState={setState} label="logementAcheve" />
                 </Card>
                 <Card title="Quelle est la surface de votre logement ?" info="Il s'agit de la surface chauffée de votre logement">
                     <div className="relative">
-                        <input id="surface" className="w-full py-2 pl-3 pr-10 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" />
+                        <input id="surface" className="w-full py-2 pl-3 pr-10 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" onChange={(e) => setState(z => { return { ...z, surface: e.target.valueAsNumber || 0 } })} type="number" />
                         <label
                             htmlFor="surface"
                             className="select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs "
@@ -103,7 +100,7 @@ const App = () => {
                     </div>
                 </Card>
                 <Card title="Quel est votre type d'énergie actuelle ?" cols="2">
-                    <Energy />
+                    <Energy setState={setState} />
                 </Card>
             </Section>
             <Section title="VOS TRAVAUX" id="2" cardCount="1" >
@@ -113,89 +110,158 @@ const App = () => {
             </Section>
             <Section title="VOTRE FOYER" id="3" cardCount="2" >
                 <Card title="Quelle est votre situation vis-à-vis du logement ?">
-                    <RadioRect els={foyerCard1} />
+                    <RadioRect els={foyerCard1} setState={setState} label="foyer" />
                 </Card>
                 <Card title="Combien de personnes vivent dans votre foyer ?" info="Nombre de personnes à charge, rattachées au même foyer fiscal">
                     <div className="relative">
-                        <input id="foyer" className="w-full py-2 pl-3 pr-10 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" />
+                        <input id="foyerNumber" className="w-full py-2 pl-3 pr-10 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" onChange={(e) => setState(z => { return { ...z, personnes: e.target.valueAsNumber || 0 } })} type="number" />
                         <label
-                            htmlFor="foyer"
+                            htmlFor="foyerNumber"
                             className="select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs "
                         >
                             Personnes dans votre foyer
                         </label>
-
                     </div>
                 </Card>
                 <Card title="Quel est le montant de votre revenu fiscal de référence ?" subTitle={`Vous trouverez votre revenu fiscal de référence sur la page de garde de votre dernier avis d'imposition, dans le cadre "Vos références".`}>
-                    <RadioRect els={foyerCard3} />
+                    <RadioRect els={foyerCard3} setState={setState} label="fiscal" />
                 </Card>
             </Section>
             <Section title="VOTRE PROJET" id="4" cardCount="2">
                 <Card title="Quelle est l'échéance de votre projet ?">
-                    <RadioRect els={projetCard3} />
+                    <RadioRect els={projetCard3} setState={setState} label="projet" />
                 </Card>
             </Section>
         </div>
     );
 }
 const Travaux = () => {
-    const items = [
+    const els = [
         {
             id: 1,
             text: "Chaudière gaz à condensation",
+            sub: {
+                price: 4000,
+            },
             active: false
         },
         {
             id: 2,
             text: "Pompe à chaleur Air / Eau",
+            sub: {
+                price: 12000,
+            },
             active: false
         },
         {
             id: 3,
             text: "Pompe à chaleur Air / Air",
+            sub: {
+                price: 10000,
+            },
             active: false
         },
         {
             id: 4,
             text: "Pompe à chaleur Hybride",
+            sub: {
+                price: 12500,
+            },
             active: false
         },
         {
             id: 5,
             text: "Poêle à bois / granulés",
+            sub: {
+                price: 5000,
+            },
             active: false
         },
         {
             id: 6,
             text: "Chaudière bois / granulés",
+            sub: {
+                price: 18000,
+            },
             active: false
         },
         {
             id: 7,
             text: "Radiateur électriques",
+            sub: {
+                price: 2600,
+                number: 4,
+                label: "Nombre de radiateurs"
+            },
             active: false
         },
         {
             id: 8,
             text: "Chauffe-eau thermodynamique",
+            sub: {
+                price: 3500
+            },
             active: false
         },
         {
             id: 9,
             text: "Ventilation double flux",
+            sub: {
+                price: 6000,
+            },
             active: false
         }
     ]
-    const [active, setActive] = React.useState()
+    const [items, setItems] = React.useState(els)
+    const [selected, setSelected] = React.useState([])
+    React.useEffect(() => {
+        setSelected(items.filter(item => item.active))
+    }, [items])
+    const handleClick = (item) => {
+        setItems(e => [...e.filter(i => i.id !== item.id), { ...item, active: !item.active }].sort((a, b) => a.id - b.id))
+    }
     return (
-        <div className="grid md:grid-cols-5 grid-cols-2 gap-5">
-            {items.map(item => <RadioSquare text={item.text} active={active} setActive={setActive} id={item.id} />)}
+        <div>
+            <div className="grid md:grid-cols-5 gap-5 mb-4">
+                {items.map(item => <RadioSquare item={item} setItems={setItems} onClick={handleClick} />)}
+            </div>
+            {!!selected.length &&
+                <Card title="Connaissez-vous le montant de vos solutions ?" subTitle="Si vous connaissez les prix de vos solutions, la simulation de vos aides sera plus exacte en les renseignant ci-dessous." cols={2}>
+                    <div className="grid lg:grid-cols-4 md:grid-cols-3 gap-4">
+                        {selected.map(i => <div className="flex flex-col justify-between gap-3">
+                            <label
+                                htmlFor={"select_" + i.id}
+                                className="font-medium ml-1"
+                            >
+                                {i.text}
+                            </label>
+                            {i.sub.number && <div className="relative">
+                                <input id={"select_sub_" + i.id} type="number" className="w-full py-2 px-3 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" defaultValue={i.sub.number} />
+                                <label
+                                    htmlFor={"select_sub_" + i.id}
+                                    className="select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs !top-3 !text-xs !translate-none"
+                                >
+                                    {i.sub.label}
+                                </label>
+                            </div>}
+                            <div className="relative">
+                                <input id={"select_" + i.id} type="number" className="w-full py-2 px-3 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" defaultValue={i.sub.price} />
+                                <label
+                                    htmlFor={"select_" + i.id}
+                                    className="select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs !top-3 !text-xs !translate-none"
+                                >
+                                    Total (€)
+                                </label>
+                            </div>
+                        </div>)}
+                    </div>
+                </Card>
+            }
         </div>
     )
 }
-const Energy = () => {
-    const items = [
+const Energy = ({ setState }) => {
+    const els = [
         {
             id: 1,
             text: "Électrique",
@@ -241,29 +307,63 @@ const Energy = () => {
             active: false
         }
     ]
-    const [active, setActive] = React.useState()
+    const [items, setItems] = React.useState(els)
     const [selected, setSelected] = React.useState()
     React.useEffect(() => {
-        setSelected(items.find(item => item.id === active))
-    }, [active])
+        const i = items.find(item => item.active)
+
+        if (i) {
+            setState(e => {
+                return {
+                    ...e,
+                    energy: i.text,
+                    energy_type: e.energy_type ? i.id === 3 ? "" : e.energy_type : ""
+                }
+            })
+            setSelected(i)
+        }
+    }, [items])
     return (
         <div>
             <div className="grid md:grid-cols-5 grid-cols-2 gap-5 mb-4">
-                {items.map(item => <RadioSquare text={item.text} active={active} setActive={setActive} id={item.id} />)}
+                {items.map(item => <RadioSquare item={item} setItems={setItems} />)}
             </div>
             {selected && selected.sub && <Card title={selected.sub.title} info={selected.sub.info}>
                 <RadioRect els={selected.sub.els.map((el, id) => {
                     return { text: el, id }
-                })} />
+                })} setState={setState} label="energy_type" />
             </Card>}
         </div>
     )
 }
-const Logement = () => {
-    const [active, setActive] = React.useState()
+const Logement = ({ setState }) => {
+    const els = [
+        {
+            id: 1,
+            text: "Maison",
+            active: false
+        },
+        {
+            id: 2,
+            text: "Appartement",
+            active: false
+        }
+    ]
+    const [items, setItems] = React.useState(els)
+    React.useEffect(() => {
+        const i = items.find(item => item.active)
+        if (i) {
+            setState(e => {
+                return {
+                    ...e,
+                    logement: i.text
+                }
+            })
+        }
+    }, [items])
     return (
-        <div className="grid grid-cols-3 gap-5">
-            <RadioSquare setActive={setActive} id={1} active={active} text={"Maison"}>
+        <div className="grid sm:grid-cols-3 md:grid-cols-3 grid-cols-2 gap-5">
+            <RadioSquare item={items[0]} setItems={setItems}>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 64 80"
@@ -341,7 +441,7 @@ const Logement = () => {
                     <path d="m6 63-4 2 14 7v-4z" opacity=".1" />
                 </svg>
             </RadioSquare>
-            <RadioSquare setActive={setActive} id={2} active={active} text={"Appartement"}>
+            <RadioSquare item={items[1]} setItems={setItems}>
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 128 132"
@@ -1024,22 +1124,35 @@ const Logement = () => {
         </div >
     )
 }
-const RadioSquare = ({ children, id, setActive, active, text }) => {
+const RadioSquare = ({ children, setItems, item, onClick = () => setItems(e => [...e.filter(i => i.id !== item.id).map(z => { return { ...z, active: false } }), { ...item, active: true }].sort((a, b) => a.id - b.id)) }) => {
     return (
-        <div className={"transition-all shadow-md rounded-lg p-3 cursor-pointer " + (active === id ? " bg-sky-500 text-white" : "text-gray-700")} onClick={() => setActive(id)}>
+        <div className={"transition-all shadow-md rounded-lg p-3 cursor-pointer " + (item.active ? " bg-sky-500 text-white" : "text-gray-700 hover:bg-sky-500 hover:bg-opacity-25")} onClick={() => {
+            onClick(item)
+        }}>
             <div className="flex flex-col items-center justify-center gap-2">
                 {children}
-                <span className="text-sm">{text}</span>
+                <span className="text-sm font-medium md:text-left text-center">{item.text}</span>
             </div>
-        </div >
+        </div>
     )
 }
-const RadioRect = ({ els }) => {
+const RadioRect = ({ els, setState, label }) => {
     const [items, setItems] = React.useState(els)
+    React.useEffect(() => {
+        const i = items.find(item => item.active)
+        if (i) {
+            setState(e => {
+                return {
+                    ...e,
+                    [label]: i.text
+                }
+            })
+        }
+    }, [items])
     return (
         <div className="flex flex-col gap-3">
             {items.map(item => (
-                <div className={"transition-all bg-white relative flex cursor-pointer rounded-lg px-5 py-4 shadow-md focus:outline-none" + (item.active ? " bg-sky-500 text-white" : " hover:bg-sky-500 hover:bg-opacity-25")} onClick={() => setItems(e => e.map(i => i.id === item.id ? { ...i, active: true } : { ...i, active: false }))}>
+                <div className={"transition-all bg-white relative flex cursor-pointer rounded-lg px-5 py-4 max-w-xs shadow-md focus:outline-none" + (item.active ? " bg-sky-500 text-white" : " hover:bg-sky-500 hover:bg-opacity-25")} onClick={() => setItems(e => e.map(i => i.id === item.id ? { ...i, active: true } : { ...i, active: false }))}>
                     <div className="flex w-full items-center justify-between">
                         <div className="flex items-center">
                             <div className="text-sm">
@@ -1066,11 +1179,14 @@ const RadioRect = ({ els }) => {
         </div>
     )
 }
-const ComboBoxEl = ({ item, checked, disabled = false, setSearch }) => {
+const ComboBoxEl = ({ item, checked, setLoc, disabled = false, setSearch }) => {
     return (
-        <li className={"relative select-none py-2 pl-10 pr-4 " + (disabled || "hover:bg-sky-500 hover:text-white cursor-pointer ") + (checked ? "bg-sky-500 text-white" : "text-gray-900")} onClick={() => setSearch(item.city)}>
+        <li className={"relative select-none py-2 pl-10 pr-4 " + (disabled || "hover:bg-sky-500 hover:text-white cursor-pointer ") + (checked ? "bg-sky-500 text-white" : "text-gray-900")} onClick={() => {
+            setSearch(item.city)
+            setLoc(item)
+        }}>
             <p>
-                <span className="block truncate font-normal">{item ? item.address : 'Nothing found.'}</span>
+                <span className="block truncate font-normal">{item ? item.address : 'Rien à afficher.'}</span>
                 {checked && <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                         <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd"></path>
@@ -1083,10 +1199,19 @@ const ComboBoxEl = ({ item, checked, disabled = false, setSearch }) => {
         </li>
     )
 }
-const ComboBox = () => {
+const ComboBox = ({ setState }) => {
     const [search, setSearch] = React.useState('')
     const [options, setOptions] = React.useState([])
+    const [loc, setLoc] = React.useState()
     const [shown, setShown] = React.useState(false)
+    React.useEffect(() => {
+        setState(e => {
+            return {
+                ...e,
+                ...loc
+            }
+        })
+    }, [loc])
     React.useEffect(() => {
         search.length >= 3 && (async () => {
             const response = await fetch(
@@ -1133,7 +1258,7 @@ const ComboBox = () => {
                 </button>
             </div>
             {shown && <ul className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-10">
-                {options.length > 0 ? options.map(e => <ComboBoxEl item={e} checked={false} setSearch={setSearch} />) : <ComboBoxEl disabled />}
+                {options.length > 0 ? options.map(e => <ComboBoxEl item={e} setLoc={setLoc} checked={false} setSearch={setSearch} />) : <ComboBoxEl disabled />}
             </ul>}
         </div>
     )
