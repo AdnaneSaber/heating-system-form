@@ -1,3 +1,21 @@
+const slug = function(str) {
+    str = str.replace(/^\s+|\s+$/g, ''); // trim
+    str = str.toLowerCase();
+  
+    // remove accents, swap ñ for n, etc
+    var from = "ãàáäâẽèéëêìíïîõòóöôùúüûñç·/_,:;";
+    var to   = "aaaaaeeeeeiiiiooooouuuunc------";
+    for (var i = 0, l = from.length; i < l; i++) {
+      str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
+    }
+  
+    str = str.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+             .replace(/\s+/g, '-') // collapse whitespace and replace by -
+             .replace(/-+/g, '-'); // collapse dashes
+  
+    return str;
+  };
+
 const App = () => {
     const foyerCard1 = [
         {
@@ -73,6 +91,14 @@ const App = () => {
     ]
     const [state, setState] = React.useState({})
     React.useEffect(() => {
+        setState(e => {
+            return {
+                ...e,
+                energy_type: ""
+            }
+        })
+    }, [state.energy])
+    React.useEffect(() => {
         console.log(state)
     }, [state])
     return (
@@ -85,14 +111,14 @@ const App = () => {
                     <ComboBox setState={setState} />
                 </Card>
                 <Card title="À quelle période votre logement a-t-il été achevé ?">
-                    <RadioRect els={logementCard3} setState={setState} label="logementAcheve" />
+                    <RadioRect els={logementCard3} state={state} setState={setState} label="logementAcheve" />
                 </Card>
                 <Card title="Quelle est la surface de votre logement ?" info="Il s'agit de la surface chauffée de votre logement">
                     <div className="relative">
                         <input id="surface" className="w-full py-2 pl-3 pr-10 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" onChange={(e) => setState(z => { return { ...z, surface: e.target.valueAsNumber || 0 } })} type="number" />
                         <label
                             htmlFor="surface"
-                            className="select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs "
+                            className={"select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs " + (state.surface ? "!translate-none !top-3 !text-xs" : "")}
                         >
                             Surface du logement en m²
                         </label>
@@ -100,17 +126,17 @@ const App = () => {
                     </div>
                 </Card>
                 <Card title="Quel est votre type d'énergie actuelle ?" cols="2">
-                    <Energy setState={setState} />
+                    <Energy setState={setState} state={state} />
                 </Card>
             </Section>
             <Section title="VOS TRAVAUX" id="2" cardCount="1" >
                 <Card title="Quels sont les travaux que vous souhaitez réaliser ?" subTitle="(Plusieurs choix possibles afin de comparer les aides disponibles pour chacun d'entre eux)">
-                    <Travaux />
+                    <Travaux state={state} setState={setState} />
                 </Card>
             </Section>
             <Section title="VOTRE FOYER" id="3" cardCount="2" >
                 <Card title="Quelle est votre situation vis-à-vis du logement ?">
-                    <RadioRect els={foyerCard1} setState={setState} label="foyer" />
+                    <RadioRect els={foyerCard1} state={state} setState={setState} label="foyer" />
                 </Card>
                 <Card title="Combien de personnes vivent dans votre foyer ?" info="Nombre de personnes à charge, rattachées au même foyer fiscal">
                     <div className="relative">
@@ -124,18 +150,18 @@ const App = () => {
                     </div>
                 </Card>
                 <Card title="Quel est le montant de votre revenu fiscal de référence ?" subTitle={`Vous trouverez votre revenu fiscal de référence sur la page de garde de votre dernier avis d'imposition, dans le cadre "Vos références".`}>
-                    <RadioRect els={foyerCard3} setState={setState} label="fiscal" />
+                    <RadioRect els={foyerCard3} state={state} setState={setState} label="fiscal" />
                 </Card>
             </Section>
             <Section title="VOTRE PROJET" id="4" cardCount="2">
                 <Card title="Quelle est l'échéance de votre projet ?">
-                    <RadioRect els={projetCard3} setState={setState} label="projet" />
+                    <RadioRect els={projetCard3} state={state} setState={setState} label="projet" />
                 </Card>
             </Section>
         </div>
     );
 }
-const Travaux = () => {
+const Travaux = ({ state, setState }) => {
     const els = [
         {
             id: 1,
@@ -214,12 +240,31 @@ const Travaux = () => {
     ]
     const [items, setItems] = React.useState(els)
     const [selected, setSelected] = React.useState([])
+    const label = "travaux"
     React.useEffect(() => {
-        setSelected(items.filter(item => item.active))
+        const el = items.filter(item => item.active)
+        setSelected(el)
+        setState(e => {
+            let a = {}
+            el.map(i => {
+                a = {
+                    ...e,
+                    [label]: {
+                        ...e[label],
+                        [slug(i.text)]: {
+                            total: i.sub.price,
+                            number: i.sub.number
+                        }
+                    }
+                }
+            })
+            return a
+        })
     }, [items])
     const handleClick = (item) => {
         setItems(e => [...e.filter(i => i.id !== item.id), { ...item, active: !item.active }].sort((a, b) => a.id - b.id))
     }
+
     return (
         <div>
             <div className="grid md:grid-cols-5 gap-5 mb-4">
@@ -236,7 +281,20 @@ const Travaux = () => {
                                 {i.text}
                             </label>
                             {i.sub.number && <div className="relative">
-                                <input id={"select_sub_" + i.id} type="number" className="w-full py-2 px-3 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" defaultValue={i.sub.number} />
+                                <input id={"select_sub_" + i.id} type="number" className="w-full py-2 px-3 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" defaultValue={i.sub.number} onChange={ev => {
+                                    setState(e => {
+                                        return {
+                                            ...e,
+                                            [label]: {
+                                                ...e[label],
+                                                [slug(i.text)]: {
+                                                    ...e[label] ? e[label][slug(i.text)] : {},
+                                                    number: ev.target.value
+                                                }
+                                            }
+                                        }
+                                    })
+                                }} />
                                 <label
                                     htmlFor={"select_sub_" + i.id}
                                     className="select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs !top-3 !text-xs !translate-none"
@@ -245,7 +303,20 @@ const Travaux = () => {
                                 </label>
                             </div>}
                             <div className="relative">
-                                <input id={"select_" + i.id} type="number" className="w-full py-2 px-3 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" defaultValue={i.sub.price} />
+                                <input id={"select_" + i.id} type="number" className="w-full py-2 px-3 text-sm rounded-lg leading-5 text-gray-900 focus:ring-0 peer pt-6 placeholder-shown:hidden shadow-md border" defaultValue={i.sub.price} onChange={ev => {
+                                    setState(e => {
+                                        return {
+                                            ...e,
+                                            [label]: {
+                                                ...e[label],
+                                                [slug(i.text)]: {
+                                                    ...e[label] ? e[label][slug(i.text)] : {},
+                                                    total: ev.target.value
+                                                }
+                                            }
+                                        }
+                                    })
+                                }} />
                                 <label
                                     htmlFor={"select_" + i.id}
                                     className="select-none absolute top-1/2 text-sm text-gray-500 -translate-y-1/2 left-3 peer-focus:translate-none peer-focus:top-3 transition-all cursor-text peer-focus:text-xs !top-3 !text-xs !translate-none"
@@ -260,7 +331,7 @@ const Travaux = () => {
         </div>
     )
 }
-const Energy = ({ setState }) => {
+const Energy = ({ setState, state }) => {
     const els = [
         {
             id: 1,
@@ -331,7 +402,7 @@ const Energy = ({ setState }) => {
             {selected && selected.sub && <Card title={selected.sub.title} info={selected.sub.info}>
                 <RadioRect els={selected.sub.els.map((el, id) => {
                     return { text: el, id }
-                })} setState={setState} label="energy_type" />
+                })} setState={setState} state={state} label="energy_type" />
             </Card>}
         </div>
     )
@@ -1136,11 +1207,14 @@ const RadioSquare = ({ children, setItems, item, onClick = () => setItems(e => [
         </div>
     )
 }
-const RadioRect = ({ els, setState, label }) => {
+const RadioRect = ({ els, state, setState, label }) => {
     const [items, setItems] = React.useState(els)
-    React.useEffect(() => {
-        const i = items.find(item => item.active)
+    // React.useEffect(() => {
+    // }, [items])
+    const handleClick = (z) => {
+        const i = items.find(item => item.id === z.id)
         if (i) {
+            setItems(e => e.map(i => i.id === z.id ? { ...i, active: true } : { ...i, active: false }))
             setState(e => {
                 return {
                     ...e,
@@ -1148,11 +1222,21 @@ const RadioRect = ({ els, setState, label }) => {
                 }
             })
         }
-    }, [items])
+    }
+    React.useEffect(() => {
+        setItems(els)
+    }, [els])
     return (
         <div className="flex flex-col gap-3">
             {items.map(item => (
-                <div className={"transition-all bg-white relative flex cursor-pointer rounded-lg px-5 py-4 max-w-xs shadow-md focus:outline-none" + (item.active ? " bg-sky-500 text-white" : " hover:bg-sky-500 hover:bg-opacity-25")} onClick={() => setItems(e => e.map(i => i.id === item.id ? { ...i, active: true } : { ...i, active: false }))}>
+                <div className={"transition-all bg-white relative flex cursor-pointer rounded-lg px-5 py-4 max-w-xs shadow-md focus:outline-none " + (item.text === state[label] ? "bg-sky-500 text-white" : "hover:bg-sky-500 hover:bg-opacity-25")}
+                    // onClick={() => setTimeout(() => {
+                    //     setItems(e => e.map(i => i.id === item.id ? { ...i, active: true } : { ...i, active: false }))
+                    // }, 100)} 
+                    onClick={() => setTimeout(() => {
+                        handleClick(item)
+                    }, 50)}
+                >
                     <div className="flex w-full items-center justify-between">
                         <div className="flex items-center">
                             <div className="text-sm">
@@ -1160,23 +1244,26 @@ const RadioRect = ({ els, setState, label }) => {
                             </div>
                         </div>
                     </div>
-                    {item.active && (
-                        <div className="shrink-0 text-white">
-                            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-                                <circle cx="12" cy="12" r="12" fill="#fff" opacity="0.2"></circle>
-                                <path
-                                    d="M7 13l3 3 7-7"
-                                    stroke="#fff"
-                                    strokeWidth={1.5}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                ></path>
-                            </svg>
-                        </div>
-                    )}
+                    {
+                        item.text === state[label] && (
+                            <div className="shrink-0 text-white">
+                                <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+                                    <circle cx="12" cy="12" r="12" fill="#fff" opacity="0.2"></circle>
+                                    <path
+                                        d="M7 13l3 3 7-7"
+                                        stroke="#fff"
+                                        strokeWidth={1.5}
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    ></path>
+                                </svg>
+                            </div>
+                        )
+                    }
                 </div>
-            ))}
-        </div>
+            ))
+            }
+        </div >
     )
 }
 const ComboBoxEl = ({ item, checked, setLoc, disabled = false, setSearch }) => {
